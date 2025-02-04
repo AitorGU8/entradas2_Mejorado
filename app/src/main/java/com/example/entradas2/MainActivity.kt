@@ -73,11 +73,23 @@ class MainActivity : AppCompatActivity() {
 
         // Listener para el botón "Play"
         btnPlay.setOnClickListener {
-            this.semaforo="V"
+            this.semaforo = "V"
             val sharedPreferences = getSharedPreferences("WebCheckerPrefs", MODE_PRIVATE)
             sharedPreferences.edit().putString("semaforo", semaforo).apply()
 
+            // Comprobar si ya hay un trabajo en ejecución con la misma etiqueta
+            val workInfos = WorkManager.getInstance(this)
+                .getWorkInfosByTag(workTag).get()
+
+            // Si ya hay un trabajo en ejecución, no encolamos otro
+            if (workInfos.isNotEmpty() && workInfos[0].state == WorkInfo.State.RUNNING) {
+                Toast.makeText(this, "Ya hay un trabajo en ejecución", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            // Cancelar todos los trabajos previos con esta etiqueta
             WorkManager.getInstance(this).cancelAllWorkByTag(this.workTag)
+
             val workRequest = PeriodicWorkRequestBuilder<WebCheckerWorker>(
                 15, // Intervalo mínimo de 15 minutos
                 TimeUnit.MINUTES
@@ -89,6 +101,7 @@ class MainActivity : AppCompatActivity() {
             // Guardar el ID del trabajo en ejecución
             this.workId = workRequest.id
         }
+
 
         // Listener para el botón "Stop"
         btnStop.setOnClickListener {
