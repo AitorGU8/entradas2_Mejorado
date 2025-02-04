@@ -16,7 +16,9 @@ import android.Manifest
 import android.content.Context
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Patterns
 import android.widget.EditText
+import android.widget.Toast
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkInfo
 import java.util.UUID
@@ -110,9 +112,13 @@ class MainActivity : AppCompatActivity() {
 
             override fun afterTextChanged(s: Editable?) {
                 val url = s.toString()
-                val sharedPreferences = getSharedPreferences("WebCheckerPrefs", MODE_PRIVATE)
-                sharedPreferences.edit().putString("url", url).apply()
-                println("URL ingresada: $url")
+                if (Patterns.WEB_URL.matcher(url).matches()) {
+                    val sharedPreferences = getSharedPreferences("WebCheckerPrefs", MODE_PRIVATE)
+                    sharedPreferences.edit().putString("url", url).apply()
+                    println("URL ingresada: $url")
+                } else {
+                    urlField.error="URL no válida"
+                }
             }
         })
 
@@ -127,11 +133,22 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun afterTextChanged(s: Editable?) {
-                val word = s.toString()
-                val sharedPreferences = getSharedPreferences("WebCheckerPrefs", MODE_PRIVATE)
-                sharedPreferences.edit().putString("word", word).apply()
-                println("Palabra ingresada: $word")
+                val word = s.toString().trim()
+                if (word.isNotEmpty() && word.length >= 3 && word.matches("^[a-zA-Z0-9 ]*$".toRegex())) {
+                    val sharedPreferences = getSharedPreferences("WebCheckerPrefs", MODE_PRIVATE)
+                    sharedPreferences.edit().putString("word", word).apply()
+                    println("Palabra ingresada: $word")
+                } else {
+                    if (word.isEmpty()) {
+                        wordField.error = "La palabra clave no puede estar vacía"
+                    } else if (word.length < 3) {
+                        wordField.error = "La palabra clave debe tener al menos 3 caracteres"
+                    } else {
+                        wordField.error = "La palabra clave solo puede contener letras y números"
+                    }
+                }
             }
+
         })
     }
 
